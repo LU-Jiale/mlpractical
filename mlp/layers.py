@@ -332,7 +332,7 @@ class LeakyReluLayer(Layer):
         Given gradients with respect to the outputs of the layer calculates the
         gradients with respect to the layer inputs.
         """
-        gradients = inputs #remove and replace with your code
+        gradients = inputs * 2 #remove and replace with your code
         return gradients
 
     def __repr__(self):
