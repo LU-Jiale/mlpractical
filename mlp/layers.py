@@ -321,9 +321,9 @@ class LeakyReluLayer(Layer):
     def fprop(self, inputs):
         """Forward propagates activations through the layer transformation.
 
-        For inputs `x` and outputs `y` this corresponds to `y = max(0, x)`.
+        For inputs `x` and outputs `y` this corresponds to `y = max(ax, x)`.
         """
-        outputs = inputs #remove and replace with your code
+        outputs = np.maximum(inputs, 0) + np.minimum(0.01 * inputs, 0)
         return outputs
 
     def bprop(self, inputs, outputs, grads_wrt_outputs):
@@ -332,7 +332,7 @@ class LeakyReluLayer(Layer):
         Given gradients with respect to the outputs of the layer calculates the
         gradients with respect to the layer inputs.
         """
-        gradients = inputs * 2 #remove and replace with your code
+        gradients = (outputs / inputs) * grads_wrt_outputs
         return gradients
 
     def __repr__(self):
@@ -346,7 +346,7 @@ class ELULayer(Layer):
 
         For inputs `x` and outputs `y` this corresponds to `y = max(0, x)`.
         """
-        outputs = inputs #remove and replace with your code
+        outputs = np.maximum(inputs, 0) + np.minimum(np.exp(inputs) - 1, 0)
         return outputs
 
     def bprop(self, inputs, outputs, grads_wrt_outputs):
@@ -355,7 +355,7 @@ class ELULayer(Layer):
         Given gradients with respect to the outputs of the layer calculates the
         gradients with respect to the layer inputs.
         """
-        gradients = inputs #remove and replace with your code
+        gradients = (1 + outputs * (outputs <= 0)) * grads_wrt_outputs
         return gradients
 
     def __repr__(self):
@@ -364,13 +364,15 @@ class ELULayer(Layer):
 class SELULayer(Layer):
     """Layer implementing a Self Normalizing ELU."""
     #α01 ≈ 1.6733 and λ01 ≈ 1.0507
-
+    
     def fprop(self, inputs):
         """Forward propagates activations through the layer transformation.
 
         For inputs `x` and outputs `y` this corresponds to `y = max(0, x)`.
         """
-        outputs = inputs #remove and replace with your code
+        self.a = 1.6732632423543772848170429916717
+        self.r = 1.0507009873554804934193349852946
+        outputs = (np.maximum(inputs, 0) + np.minimum(self.a * (np.exp(inputs) - 1), 0)) * self.r
         return outputs
 
     def bprop(self, inputs, outputs, grads_wrt_outputs):
@@ -379,7 +381,9 @@ class SELULayer(Layer):
         Given gradients with respect to the outputs of the layer calculates the
         gradients with respect to the layer inputs.
         """
-        gradients = inputs #remove and replace with your code
+        self.a = 1.6732632423543772848170429916717
+        self.r = 1.0507009873554804934193349852946
+        gradients = (self.r * (outputs > 0) + (self.a * self.r + outputs) * (outputs <= 0)) * grads_wrt_outputs
         return gradients
 
     def __repr__(self):
@@ -401,7 +405,7 @@ class SoftmaxLayer(Layer):
         Returns:
             outputs: Array of layer outputs of shape (batch_size, output_dim).
         """
-        exp_inputs = np.exp(inputs)
+        exp_inputs = np.exp(inputs - inputs.max(-1)[:, None])
         return exp_inputs / exp_inputs.sum(-1)[:, None]
 
     def bprop(self, inputs, outputs, grads_wrt_outputs):
